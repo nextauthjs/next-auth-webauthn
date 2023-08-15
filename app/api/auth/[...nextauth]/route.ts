@@ -1,12 +1,31 @@
-import NextAuth, { AuthOptions, getServerSession } from "next-auth";
+import NextAuth, { AuthOptions, User, getServerSession } from "next-auth";
 import GitHub from "next-auth/providers/github";
-import { PrismaAdapter } from "@auth/prisma-adapter";
-import prisma from "@/lib/prisma";
 import Credentials from "next-auth/providers/credentials";
 import { verifyAuthenticationResponse } from "@simplewebauthn/server";
+import { UpstashRedisAdapter } from "@auth/upstash-redis-adapter";
+import { kv } from "@vercel/kv";
 
-const rpID = "localhost";
-const origin = `http://${rpID}`;
+export const rpName = "Example";
+export const rpID = "localhost";
+export const origin = `http://${rpID}`;
+export const expectedOrigin = `${origin}:3000`;
+
+export type Authenticator = {
+  id: number;
+  credentialID: {
+    type: "Buffer";
+    data: number[];
+  };
+  credentialPublicKey: {
+    type: "Buffer";
+    data: number[];
+  };
+  counter: number;
+  credentialDeviceType: string;
+  credentialBackedUp: boolean;
+  transports: string | null;
+  userId: string;
+};
 
 export const authOptions: AuthOptions = {
   debug: process.env.NODE_ENV !== "production",
@@ -30,11 +49,8 @@ export const authOptions: AuthOptions = {
         }
 
         const userId = session.id;
-        const user = await prisma.user.findUnique({
-          where: {
-            id: userId,
-          },
-        });
+        if (!userId) return null;
+        const user = await kv.get<User>(`user:${userId}`);
 
         if (!user) {
           return null;
@@ -42,12 +58,12 @@ export const authOptions: AuthOptions = {
 
         const expectedChallenge = user.currentChallenge;
 
-        const authenticator = await prisma.authenticator.findFirst({
-          where: {
-            userId,
-          },
-        });
+        const authenticator = await kv.get<Authenticator>(
+          `user:authenticator:by-user-id:${userId}`
+        );
         const authenticationResponse = JSON.parse(request.body?.verification);
+
+        console.log({ authenticationResponse, authenticator });
 
         if (!authenticator || !expectedChallenge) {
           throw new Error(
@@ -60,12 +76,12 @@ export const authOptions: AuthOptions = {
           verification = await verifyAuthenticationResponse({
             response: authenticationResponse,
             expectedChallenge,
-            expectedOrigin: `${origin}:3000`,
+            expectedOrigin,
             expectedRPID: rpID,
             authenticator: {
-              credentialID: new Uint8Array(authenticator.credentialID),
+              credentialID: new Uint8Array(authenticator.credentialID.data),
               credentialPublicKey: new Uint8Array(
-                authenticator.credentialPublicKey
+                authenticator.credentialPublicKey.data
               ),
               counter: authenticator.counter,
             },
@@ -78,22 +94,24 @@ export const authOptions: AuthOptions = {
         const { verified } = verification || {};
 
         if (verified) {
-          const updatedUser = await prisma.user.update({
-            where: {
-              id: user.id,
-            },
-            data: {
-              currentChallenge: "",
-            },
+          const updatedUser = {
+            ...user,
+            currentChallenge: "",
+          };
+          const updatedUserResult = await kv.set<User>(`user:${userId}`, {
+            ...user,
+            currentChallenge: "",
           });
 
-          return updatedUser;
+          if (updatedUserResult instanceof Object || updatedUserResult === "OK")
+            return updatedUser;
+          return null;
         }
         return null;
       },
     }),
   ],
-  adapter: PrismaAdapter(prisma) as AuthOptions["adapter"],
+  adapter: UpstashRedisAdapter(kv) as AuthOptions["adapter"],
   callbacks: {
     jwt: async ({ token, user }) => {
       if (user) {

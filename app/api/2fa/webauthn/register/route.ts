@@ -1,14 +1,10 @@
-import { getServerSession } from "next-auth";
+import { User, getServerSession } from "next-auth";
 import {
   generateRegistrationOptions,
   verifyRegistrationResponse,
 } from "@simplewebauthn/server";
-import prisma from "@/lib/prisma";
-import { authOptions } from "../../../auth/[...nextauth]/route";
-
-const rpName = "Example";
-const rpID = "localhost";
-const origin = `http://${rpID}`;
+import { authOptions, rpID, rpName } from "../../../auth/[...nextauth]/route";
+import { kv } from "@vercel/kv";
 
 export const GET = async (_: Request) => {
   const session = await getServerSession(authOptions);
@@ -18,21 +14,14 @@ export const GET = async (_: Request) => {
   }
 
   const userId = session.id;
-  const user = await prisma.user.findUnique({
-    where: {
-      id: userId,
-    },
-  });
+  if (!userId) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+  const user = await kv.get<User>(`user:${userId}`);
 
   if (!user) {
     return new Response("Unauthorized", { status: 401 });
   }
-
-  const userAuthenticators = await prisma.authenticator.findMany({
-    where: {
-      userId,
-    },
-  });
 
   const options = generateRegistrationOptions({
     rpName,
@@ -43,10 +32,7 @@ export const GET = async (_: Request) => {
     // (Recommended for smoother UX)
     attestationType: "none",
     // Prevent users from re-registering existing authenticators
-    excludeCredentials: userAuthenticators.map((authenticator) => ({
-      id: authenticator.credentialID,
-      type: "public-key",
-    })),
+    excludeCredentials: [],
     authenticatorSelection: {
       // "Discoverable credentials" used to be called "resident keys". The
       // old name persists in the options passed to `navigator.credentials.create()`.
@@ -56,13 +42,9 @@ export const GET = async (_: Request) => {
   });
 
   // Remember the challenge for this user
-  await prisma.user.update({
-    where: {
-      id: user.id,
-    },
-    data: {
-      currentChallenge: options.challenge,
-    },
+  await kv.set(`user:${userId}`, {
+    ...user,
+    currentChallenge: options.challenge,
   });
 
   return new Response(JSON.stringify(options), {
@@ -80,11 +62,7 @@ export const POST = async (request: Request) => {
   }
 
   const userId = session.id;
-  const user = await prisma.user.findUnique({
-    where: {
-      id: userId,
-    },
-  });
+  const user = await kv.get<User>(`user:${userId}`);
 
   if (!user) {
     return new Response("Unauthorized", { status: 401 });
@@ -131,30 +109,18 @@ export const POST = async (request: Request) => {
   if (!credentialID || !credentialPublicKey) {
     return new Response("Unauthorized", { status: 401 });
   }
-  const authenticator = await prisma.authenticator.create({
-    data: {
-      // base64 encode
-      credentialID: Buffer.from(credentialID),
-      credentialPublicKey: Buffer.from(credentialPublicKey),
-      counter: counter ?? 0,
-      credentialBackedUp: credentialBackedUp ?? false,
-      credentialDeviceType: credentialDeviceType ?? "singleDevice",
-      user: {
-        connect: {
-          id: user.id,
-        },
-      },
-    },
+  await kv.set(`user:authenticator:by-user-id:${userId}`, {
+    // base64 encode
+    credentialID: Buffer.from(credentialID),
+    credentialPublicKey: Buffer.from(credentialPublicKey),
+    counter: counter ?? 0,
+    credentialBackedUp: credentialBackedUp ?? false,
+    credentialDeviceType: credentialDeviceType ?? "singleDevice",
   });
 
-  // set 2FA enabled
-  await prisma.user.update({
-    where: {
-      id: user.id,
-    },
-    data: {
-      is2FAEnabled: true,
-    },
+  await kv.set(`user:${userId}`, {
+    ...user,
+    is2FAEnabled: true,
   });
 
   return new Response(JSON.stringify({ verified }), {
