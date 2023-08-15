@@ -5,10 +5,15 @@ import { verifyAuthenticationResponse } from "@simplewebauthn/server";
 import { UpstashRedisAdapter } from "@auth/upstash-redis-adapter";
 import { kv } from "@vercel/kv";
 
-export const rpName = "Example";
-export const rpID = "localhost";
-export const origin = `http://${rpID}`;
-export const expectedOrigin = `${origin}:3000`;
+export const rpName = "NextAuth.js + Upstash + SimpleWebAuthn Example";
+export const rpID =
+  process.env.NODE_ENV === "production"
+    ? "next-auth-webauthn.vercel.app"
+    : "localhost";
+export const origin =
+  process.env.NODE_ENV === "production" ? `https://${rpID}` : `http://${rpID}`;
+export const expectedOrigin =
+  process.env.NODE_ENV === "production" ? origin : `${origin}:3000`;
 
 export type Authenticator = {
   id: number;

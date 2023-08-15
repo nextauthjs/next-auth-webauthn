@@ -3,7 +3,12 @@ import {
   generateRegistrationOptions,
   verifyRegistrationResponse,
 } from "@simplewebauthn/server";
-import { authOptions, rpID, rpName } from "../../../auth/[...nextauth]/route";
+import {
+  authOptions,
+  expectedOrigin,
+  rpID,
+  rpName,
+} from "../../../auth/[...nextauth]/route";
 import { kv } from "@vercel/kv";
 
 export const GET = async (_: Request) => {
@@ -77,7 +82,7 @@ export const POST = async (request: Request) => {
       verification = await verifyRegistrationResponse({
         response,
         expectedChallenge,
-        expectedOrigin: `${origin}:3000`,
+        expectedOrigin,
         expectedRPID: rpID,
         requireUserVerification: true,
       });
