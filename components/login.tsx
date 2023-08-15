@@ -8,6 +8,8 @@ import { signIn, signOut } from "next-auth/react";
 import { useEffect } from "react";
 
 export const Login = ({ session }: { session: Session | null }) => {
+  console.log({ session });
+
   const notRegistered = session && !session?.user.is2FAEnabled;
   const verifying = session?.user.is2FAEnabled && !session?.is2FAVerified;
 

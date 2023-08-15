@@ -1,4 +1,3 @@
-import Image from "next/image";
 import { Login } from "@/components/login";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "./api/auth/[...nextauth]/route";
@@ -35,6 +34,13 @@ export default async function Home() {
           <li>Sign out & Sign in with GitHub again</li>
           <li>Verify the WebAuthn credential</li>
         </ol>
+        <br />
+        {session && (
+          <pre>
+            Current session object:{" "}
+            <code>{JSON.stringify(session, null, 2)}</code>
+          </pre>
+        )}
       </div>
     </main>
   );
