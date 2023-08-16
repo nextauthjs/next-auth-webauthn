@@ -27,6 +27,7 @@ export const Login = ({ session }: { session: Session | null }) => {
           });
         } catch (error) {
           console.error(error);
+          await signOut();
         }
       }
     })();

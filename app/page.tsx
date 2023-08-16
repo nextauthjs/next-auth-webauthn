@@ -26,7 +26,17 @@ export default async function Home() {
           >
             NextAuth.js
           </a>{" "}
-          to add 2FA with WebAuthn. The steps are:
+          to add 2FA with WebAuthn. See the{" "}
+          <a
+            className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300
+            transition-colors duration-200"
+            href="https://github.com/nextauthjs/next-auth-webauthn"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            source
+          </a>{" "}
+          on GitHub. The steps are:
         </p>
         <ol className="list-decimal list-inside">
           <li>Sign in with GitHub</li>
