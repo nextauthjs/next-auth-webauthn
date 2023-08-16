@@ -1,11 +1,8 @@
 import { generateAuthenticationOptions } from "@simplewebauthn/server";
 import { User, getServerSession } from "next-auth";
-import {
-  Authenticator,
-  authOptions,
-  rpID,
-} from "@/app/api/auth/[...nextauth]/route";
+import { authOptions, rpID } from "@/app/api/auth/[...nextauth]/route";
 import { kv } from "@vercel/kv";
+import { fromBase64 } from "@/lib/convert";
 
 export const GET = async (_: Request) => {
   const session = await getServerSession(authOptions);
@@ -21,23 +18,19 @@ export const GET = async (_: Request) => {
     return new Response("Unauthorized", { status: 401 });
   }
 
-  const userAuthenticator = await kv.get<Authenticator>(
+  const existingAuthenticators = await kv.get<string[]>(
     `user:authenticator:by-user-id:${userId}`
   );
 
-  if (!userAuthenticator) {
+  if (!existingAuthenticators?.length) {
     return new Response("Unauthorized", { status: 401 });
   }
 
   const options = generateAuthenticationOptions({
-    // Require users to use a previously-registered authenticator
-    allowCredentials: [
-      {
-        // decode base 64
-        id: new Uint8Array(userAuthenticator.credentialID.data),
-        type: "public-key",
-      },
-    ],
+    allowCredentials: existingAuthenticators.map((existingAuthenticator) => ({
+      id: fromBase64(existingAuthenticator),
+      type: "public-key",
+    })),
     userVerification: "preferred",
     rpID,
   });

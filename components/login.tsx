@@ -22,6 +22,7 @@ export const Login = ({ session }: { session: Session | null }) => {
         try {
           // Pass the options to the authenticator and wait for a response
           const asseResp = await startAuthentication(data);
+          console.log({ asseResp });
           await signIn("webauthn", {
             verification: JSON.stringify(asseResp),
           });

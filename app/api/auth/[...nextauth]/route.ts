@@ -15,16 +15,14 @@ export const origin =
 export const expectedOrigin =
   process.env.NODE_ENV === "production" ? origin : `${origin}:3000`;
 
+export type RedisBuffer = {
+  type: "Buffer";
+  data: number[];
+};
 export type Authenticator = {
   id: number;
-  credentialID: {
-    type: "Buffer";
-    data: number[];
-  };
-  credentialPublicKey: {
-    type: "Buffer";
-    data: number[];
-  };
+  credentialID: RedisBuffer;
+  credentialPublicKey: RedisBuffer;
   counter: number;
   credentialDeviceType: string;
   credentialBackedUp: boolean;
@@ -63,12 +61,15 @@ export const authOptions: AuthOptions = {
 
         const expectedChallenge = user.currentChallenge;
 
-        const authenticator = await kv.get<Authenticator>(
+        const authenticatorsByUser = await kv.get<string[]>(
           `user:authenticator:by-user-id:${userId}`
         );
-        const authenticationResponse = JSON.parse(request.body?.verification);
+        if (!authenticatorsByUser?.length) return null;
 
-        console.log({ authenticationResponse, authenticator });
+        const authenticationResponse = JSON.parse(request.body?.verification);
+        const authenticator = await kv.get<Authenticator>(
+          `user:authenticator:${authenticationResponse.id}`
+        );
 
         if (!authenticator || !expectedChallenge) {
           throw new Error(

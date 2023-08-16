@@ -10,6 +10,7 @@ import {
   rpName,
 } from "../../../auth/[...nextauth]/route";
 import { kv } from "@vercel/kv";
+import { toBase64 } from "@/lib/convert";
 
 export const GET = async (_: Request) => {
   const session = await getServerSession(authOptions);
@@ -114,14 +115,24 @@ export const POST = async (request: Request) => {
   if (!credentialID || !credentialPublicKey) {
     return new Response("Unauthorized", { status: 401 });
   }
-  await kv.set(`user:authenticator:by-user-id:${userId}`, {
-    // base64 encode
+  const authenticator = {
     credentialID: Buffer.from(credentialID),
     credentialPublicKey: Buffer.from(credentialPublicKey),
     counter: counter ?? 0,
     credentialBackedUp: credentialBackedUp ?? false,
     credentialDeviceType: credentialDeviceType ?? "singleDevice",
-  });
+  };
+  const authenticatorID = toBase64(credentialID);
+  await kv.set(`user:authenticator:${authenticatorID}`, authenticator);
+  const existingAuthenticators = await kv.get<string[]>(
+    `user:authenticator:by-user-id:${userId}`
+  );
+  await kv.set(
+    `user:authenticator:by-user-id:${userId}`,
+    existingAuthenticators
+      ? [...existingAuthenticators, authenticatorID]
+      : [authenticatorID]
+  );
 
   await kv.set(`user:${userId}`, {
     ...user,
