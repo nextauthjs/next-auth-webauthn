@@ -61,14 +61,27 @@ export const authOptions: AuthOptions = {
 
         const expectedChallenge = user.currentChallenge;
 
+        const authenticatorsByUser = await kv.get<string[]>(
+          `user:authenticator:by-user-id:${userId}`
+        );
+
+        if (!authenticatorsByUser?.length) return null;
+
         const authenticationResponse = JSON.parse(request.body?.verification);
+
+        const authenticatorID = authenticatorsByUser.find(
+          (id) => id === authenticationResponse.id
+        );
+        if (!authenticatorID) {
+          return null;
+        }
         const authenticator = await kv.get<Authenticator>(
-          `user:authenticator:${authenticationResponse.id}`
+          `user:authenticator:${authenticatorID}`
         );
 
         if (!authenticator || !expectedChallenge) {
           throw new Error(
-            `Could not find authenticator ${authenticationResponse.id} for user ${user.id}`
+            `Could not find authenticator ${authenticatorID} for user ${user.id}`
           );
         }
 
