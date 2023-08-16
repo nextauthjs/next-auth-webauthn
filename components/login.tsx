@@ -10,7 +10,6 @@ import { useEffect } from "react";
 export const Login = ({ session }: { session: Session | null }) => {
   console.log({ session });
 
-  const notRegistered = session && !session?.user.is2FAEnabled;
   const verifying = session?.user.is2FAEnabled && !session?.is2FAVerified;
 
   useEffect(() => {
@@ -49,37 +48,35 @@ export const Login = ({ session }: { session: Session | null }) => {
               : `Signed in as ${session.user.email}. Sign out`}
           </button>
 
-          {notRegistered && (
-            <button
-              onClick={async () => {
-                if (!session) return;
-                const resp = await fetch("/api/2fa/webauthn/register");
-                try {
-                  const data = await resp.json();
-                  // Pass the options to the authenticator and wait for a response
-                  const attResp = await startRegistration({ ...data });
-                  // POST the response to the endpoint that calls
-                  // @simplewebauthn/server -> verifyRegistrationResponse()
-                  await fetch("/api/2fa/webauthn/register", {
-                    method: "POST",
-                    headers: {
-                      "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify(attResp),
-                  });
+          <button
+            onClick={async () => {
+              if (!session) return;
+              const resp = await fetch("/api/2fa/webauthn/register");
+              try {
+                const data = await resp.json();
+                // Pass the options to the authenticator and wait for a response
+                const attResp = await startRegistration({ ...data });
+                // POST the response to the endpoint that calls
+                // @simplewebauthn/server -> verifyRegistrationResponse()
+                await fetch("/api/2fa/webauthn/register", {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify(attResp),
+                });
 
-                  // We sign out the user to force a new login with 2FA
-                  window.alert("Successfully registered! Please login again.");
-                  await signOut();
-                } catch (error) {
-                  console.error(error);
-                }
-              }}
-              className="fixed bottom-0 left-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30"
-            >
-              Register a 2FA Device.
-            </button>
-          )}
+                // We sign out the user to force a new login with 2FA
+                window.alert("Successfully registered! Please login again.");
+                await signOut();
+              } catch (error) {
+                console.error(error);
+              }
+            }}
+            className="fixed bottom-0 left-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30"
+          >
+            Register a 2FA Device.
+          </button>
         </>
       ) : (
         <button

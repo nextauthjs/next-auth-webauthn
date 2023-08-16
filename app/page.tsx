@@ -36,9 +36,39 @@ export default async function Home() {
           >
             source
           </a>{" "}
-          on GitHub. The steps are:
+          on GitHub. It uses{" "}
+          <a
+            href="https://simplewebauthn.dev/"
+            className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300
+            transition-colors duration-200"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            SimpleWebAuthn
+          </a>
+          ,{" "}
+          <a
+            href="https://vercel.com/docs/storage/vercel-kv"
+            className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300
+            transition-colors duration-200"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Vercel KV
+          </a>
+          , and{" "}
+          <a
+            href="https://authjs.dev/reference/adapter/upstash-redis"
+            className="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300
+            transition-colors duration-200"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            RedisUpstashAdapter
+          </a>
+          . The steps are:
         </p>
-        <ol className="list-decimal list-inside">
+        <ol className="list-decimal list-inside text-lg lg:col-span-1 w-full">
           <li>Sign in with GitHub</li>
           <li>Register a WebAuthn credential</li>
           <li>Sign out & Sign in with GitHub again</li>
