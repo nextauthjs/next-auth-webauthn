@@ -73,7 +73,9 @@ export const authOptions: AuthOptions = {
           (id) => id === authenticationResponse.id
         );
         if (!authenticatorID) {
-          return null;
+          throw new Error(
+            `Could not find authenticator ${authenticatorID} for user ${user.id}`
+          );
         }
         const authenticator = await kv.get<Authenticator>(
           `user:authenticator:${authenticatorID}`
