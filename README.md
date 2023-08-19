@@ -1,34 +1,38 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
-## Getting Started
+<p align="center">
+   <br/>
+   <a href="https://next-auth.js.org" target="_blank"><img width="150px" src="https://next-auth.js.org/img/logo/logo-sm.png" /></a>
+   <h3 align="center">NextAuth.js 2FA with Webauthn Example App</h3>
+   <p align="center">
+   Open Source. Full Stack. Own Your Data.
+   </p>
+   <p align="center" style="align: center;">
+      <a href="https://npm.im/next-auth">
+        <img alt="npm" src="https://img.shields.io/npm/v/next-auth?color=green&label=next-auth">
+      </a>
+      <a href="https://bundlephobia.com/result?p=next-auth-example">
+        <img src="https://img.shields.io/bundlephobia/minzip/next-auth?label=next-auth" alt="Bundle Size"/>
+      </a>
+      <a href="https://www.npmtrends.com/next-auth">
+        <img src="https://img.shields.io/npm/dm/next-auth?label=next-auth%20downloads" alt="Downloads" />
+      </a>
+      <a href="https://npm.im/next-auth">
+        <img src="https://img.shields.io/badge/npm-TypeScript-blue" alt="TypeScript" />
+      </a>
+   </p>
+</p>
 
-First, run the development server:
+## Overview - 2FA with WebAuthn using NextAuth.js.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-```
+This example shows how to use NextAuth.js to add 2FA with [WebAuthn](https://webauthn.io/). It uses [SimpleWebAuthn](https://simplewebauthn.dev/), [Vercel KV](https://vercel.com/docs/storage/vercel-kv), and [RedisUpstashAdapter](https://authjs.dev/reference/adapter/upstash-redis). The steps are:
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+1. Sign in with GitHub
+1. Register a WebAuthn credential
+1. Sign out & Sign in with GitHub again
+1. Verify the WebAuthn credential
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+## How it works
+- We need a DB to store the user's registered webauthn credential.
+  - When the user successfully registers a credential, set the flag `is2FAEnabled: true`
+  - The next time he/she logs in, check for `is2FAEnabled` - if true, then prompt them with the Webauthn flow.
+- Implement 2FA with Webauthn in the [Credential Provider](https://authjs.dev/reference/core/providers_credentials). Note: We need to use the `strategy: 'jwt'` here. You could find more details about the reasoning in the Credential Provider doc.
