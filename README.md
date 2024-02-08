@@ -22,6 +22,9 @@
    </p>
 </p>
 
+# New built-in Webauthn provider is out now
+We introduced the new built-in Webauthn support for Auth.js - head over to https://authjs.dev/reference/core/providers/webauthn to learn more.
+
 ## Overview - 2FA with WebAuthn using NextAuth.js.
 
 This example shows how to use NextAuth.js to add 2FA with [WebAuthn](https://webauthn.io/). It uses [SimpleWebAuthn](https://simplewebauthn.dev/), [Vercel KV](https://vercel.com/docs/storage/vercel-kv), and [RedisUpstashAdapter](https://authjs.dev/reference/adapter/upstash-redis). The steps are:
